@@ -67,6 +67,7 @@ pthread_t thread;
 void my_connect_callback(struct mosquitto *mosq, void *obj, int result)
 {
 	printf("connect callback!\n");
+
 	int rc = MOSQ_ERR_SUCCESS;
 
 	if(!result){
@@ -115,6 +116,7 @@ void my_connect_callback(struct mosquitto *mosq, void *obj, int result)
 void my_disconnect_callback(struct mosquitto *mosq, void *obj, int rc)
 {
 	connected = false;
+	disconnect_sent = false;
 	printf("disconnect callback!\n");
 }
 
@@ -318,7 +320,9 @@ void *publish(void* arg)
 	char** argv;
 
 	argv = (char**) malloc(2*sizeof(char*));
-
+	
+	
+	connected = true;
 
 	buf = malloc(buf_len);
 	if(!buf){
@@ -488,10 +492,10 @@ void *publish(void* arg)
 		fprintf(stderr, "Error: %s\n", mosquitto_strerror(rc));
 	}
 //	return rc;
-//	exit(1);
+
 
 	
-	pthread_join(thread, NULL);
+
 	return NULL;
 }
 
@@ -499,17 +503,30 @@ void *publish(void* arg)
 
 static DBusHandlerResult dbus_filter (DBusConnection *connection, DBusMessage *message, void *user_data)
 {
-	char* temp_argv = "temp";
+	
 
 	
 	if(dbus_message_is_signal(message, "org.share.linux", "publish"))
 	{
+		char* temp_argv = "temp";
 		// Publish logic
 		printf("received well!\n");
 		
 		pthread_create(&thread, NULL, &publish, (void*)temp_argv);
+		printf("wow\n");	
+		pthread_join(thread, NULL);
+	
+		printf("end handle\n");	
+		return DBUS_HANDLER_RESULT_HANDLED;
+	}
+	printf("wooooooooo\n");
 
 
+	if(dbus_message_is_signal(message, "org.share.linux", "on"))
+	{
+
+
+		return DBUS_HANDLER_RESULT_HANDLED;
 	}
 
 	return DBUS_HANDLER_RESULT_NOT_YET_HANDLED;
