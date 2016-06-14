@@ -4,13 +4,13 @@ include ../config.mk
 
 all : mosquitto_pub mosquitto_sub listen_pub sub_send
 
-FLAG1=`pkg-config --libs --cflags dbus-1 glib-2.0 dbus-glib-1`
+FLAG1=`pkg-config --libs --cflags dbus-1 glib-2.0 dbus-glib-1` 
 
 
 listen_pub : listen_pub.o client_shared.o
-	${CROSS_COMPILE}${CC} $(FLAG1)$^ -o $@ $(FLAG1)${CLIENT_LDFLAGS}
+	${CROSS_COMPILE}${CC} $(FLAG1)$^ -o $@ $(FLAG1) -lpthread ${CLIENT_LDFLAGS}
 sub_send : sub_send.o client_shared.o
-	${CROSS_COMPILE}${CC} $(FLAG1)$^ -o $@ $(FLAG1)${CLIENT_LDFLAGS}
+	${CROSS_COMPILE}${CC} $(FLAG1)$^ -o $@ $(FLAG1) -lpthread ${CLIENT_LDFLAGS}
 listen_pub.o :  listen_pub.c ../lib/libmosquitto.so.${SOVERSION}
 	${CROSS_COMPILE}${CC} $(FLAG1)-c $< -o  $@ ${CLIENT_CFLAGS} $(FLAG1)
 sub_send.o :sub_send.c ../lib/libmosquitto.so.${SOVERSION}
@@ -22,7 +22,7 @@ sub_send.o :sub_send.c ../lib/libmosquitto.so.${SOVERSION}
 
 
 mosquitto_pub : pub_client.o client_shared.o
-	${CROSS_COMPILE}${CC} $^ -o $@ ${CLIENT_LDFLAGS}
+	${CROSS_COMPILE}${CC} $^ -o $@  ${CLIENT_LDFLAGS}
 
 mosquitto_sub : sub_client.o client_shared.o
 	${CROSS_COMPILE}${CC} $^ -o $@ ${CLIENT_LDFLAGS}

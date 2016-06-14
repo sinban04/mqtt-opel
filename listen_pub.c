@@ -14,6 +14,8 @@ Contributors:
    Roger Light - initial implementation and documentation.
 */
 
+#include <pthread.h>
+#include <unistd.h>
 
 // Dbus
 #include <dbus/dbus.h>
@@ -60,9 +62,11 @@ static char *username = NULL;
 static char *password = NULL;
 static bool disconnect_sent = false;
 static bool quiet = false;
+pthread_t thread;
 
 void my_connect_callback(struct mosquitto *mosq, void *obj, int result)
 {
+	printf("connect callback!\n");
 	int rc = MOSQ_ERR_SUCCESS;
 
 	if(!result){
@@ -111,6 +115,7 @@ void my_connect_callback(struct mosquitto *mosq, void *obj, int result)
 void my_disconnect_callback(struct mosquitto *mosq, void *obj, int rc)
 {
 	connected = false;
+	printf("disconnect callback!\n");
 }
 
 void my_publish_callback(struct mosquitto *mosq, void *obj, int mid)
@@ -124,6 +129,8 @@ void my_publish_callback(struct mosquitto *mosq, void *obj, int mid)
 	}else if(disconnect_sent == false){
 		mosquitto_disconnect(mosq);
 		disconnect_sent = true;
+//		connected = false;
+		printf("disconnect!\n");
 	}
 }
 
@@ -296,7 +303,7 @@ void print_usage(void)
 }
 
 //int main(int argc, char *argv[])
-void publish(int argc, char* argv[])
+void *publish(void* arg)
 {
 	struct mosq_config cfg;
 	struct mosquitto *mosq = NULL;
@@ -307,6 +314,11 @@ void publish(int argc, char* argv[])
 	int buf_len_actual;
 	int read_len;
 	int pos;
+	int argc = 3;
+	char** argv;
+
+	argv = (char**) malloc(2*sizeof(char*));
+
 
 	buf = malloc(buf_len);
 	if(!buf){
@@ -328,6 +340,8 @@ void publish(int argc, char* argv[])
 		//return 1;
 		exit(1);
 	}
+
+	free(argv);
 
 	topic = cfg.topic;
 
@@ -453,8 +467,12 @@ void publish(int argc, char* argv[])
 			rc = MOSQ_ERR_SUCCESS;
 		}else{
 			rc = mosquitto_loop(mosq, -1, 1);
+			printf("aa\n");
 		}
 	}while(rc == MOSQ_ERR_SUCCESS && connected);
+	
+	printf("bb\n");
+//	connected = true;
 
 	if(mode == MSGMODE_STDIN_LINE){
 		mosquitto_loop_stop(mosq, false);
@@ -470,23 +488,26 @@ void publish(int argc, char* argv[])
 		fprintf(stderr, "Error: %s\n", mosquitto_strerror(rc));
 	}
 //	return rc;
-	exit(1);
+//	exit(1);
+
+	
+	pthread_join(thread, NULL);
+	return NULL;
 }
 
 
 
 static DBusHandlerResult dbus_filter (DBusConnection *connection, DBusMessage *message, void *user_data)
 {
+	char* temp_argv = "temp";
 
-
-	int temp_argc;
-	char **temp_argv;
+	
 	if(dbus_message_is_signal(message, "org.share.linux", "publish"))
 	{
 		// Publish logic
 		printf("received well!\n");
 		
-		publish(temp_argc,temp_argv);
+		pthread_create(&thread, NULL, &publish, (void*)temp_argv);
 
 
 	}
