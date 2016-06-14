@@ -324,6 +324,8 @@ void *publish(void* arg)
 	
 	connected = true;
 
+
+
 	buf = malloc(buf_len);
 	if(!buf){
 		fprintf(stderr, "Error: Out of memory.\n");
@@ -477,7 +479,7 @@ void *publish(void* arg)
 	
 	printf("bb\n");
 //	connected = true;
-
+	sleep(3);
 	if(mode == MSGMODE_STDIN_LINE){
 		mosquitto_loop_stop(mosq, false);
 	}
